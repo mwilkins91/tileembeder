@@ -1,0 +1,16 @@
+{
+  "name": "chromepupettest",
+  "version": "1.0.0",
+  "description": "Making sweet headless chrome bots",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mark Wilkins <contactme@markwilkins.co> (https://www.markwilkins.co)",
+  "license": "ISC",
+  "dependencies": {
+    "escape-html": "^1.0.3",
+    "express": "^4.16.2",
+    "puppeteer": "^0.13.0"
+  }
+}
