@@ -46,7 +46,7 @@ async function screenshotDOMElement(page, selector, padding = 0) {
 
 const initScreenshot = async function(req, res, next) {
 	try {
-		const browser = await puppeteer.launch();
+		const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
 		const page = await browser.newPage();
 		await page.goto(`${req.query.url}?embedtile`, { waitUntil: 'networkidle2' });
 		let screenshotData = await screenshotDOMElement(page, '.tile');
