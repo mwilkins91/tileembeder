@@ -4,7 +4,8 @@
   "description": "Making sweet headless chrome bots",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
   },
   "author": "Mark Wilkins <contactme@markwilkins.co> (https://www.markwilkins.co)",
   "license": "ISC",
