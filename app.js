@@ -81,6 +81,6 @@ app.get('/', function(req, res, next) {
 	res.sendFile(path.resolve(__dirname, 'index.html'));
 });
 
-app.listen(8080, function() {
+app.listen(process.env.PORT || 8080, function() {
 	console.log('App is now listening on port 8080!');
 });
