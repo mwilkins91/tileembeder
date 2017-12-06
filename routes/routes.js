@@ -1,12 +1,7 @@
-const express = require('express');
-const app = express();
-const path = require('path');
 const puppeteer = require('puppeteer');
-const escapeHtml = require('escape-html');
 const fs = require('fs');
 let imageNum = 1;
-const port = process.env.PORT || 8080;
-const mustacheExpress = require('mustache-express');
+const path = require('path');
 
 fs.readdir('imgs', (err, files) => {
 	if (err) {
@@ -49,7 +44,7 @@ async function screenshotDOMElement(page, selector, padding = 0) {
 		});
 
 		let appUrl = 'https://fooling-around-with-node.herokuapp.com/';
-		if (port === 5100 || port === 8080) {
+		if (port === 5100) {
 			appUrl = '/';
 		}
 
@@ -96,27 +91,17 @@ const initScreenshot = async function(req, res, next) {
 	}
 };
 
-app.use(express.static('imgs'));
-app.use(express.static('public'));
-// Register '.mustache' extension with The Mustache Express
-app.engine('mustache', mustacheExpress());
-
-app.set('view engine', 'mustache');
-app.set('views', __dirname + '/views');
-
-// routes
-app.get('/getEmbed', initScreenshot, function(req, res, next) {
-	res.status(200);
-	res.render('result', {
-		userRequestedString: req.userRequestedString
+module.exports = function(io) {
+	// routes
+	app.get('/getEmbed', initScreenshot, function(req, res, next) {
+		res.status(200);
+		res.render('result', {
+			userRequestedString: req.userRequestedString
+		});
 	});
-});
 
-app.get('/', function(req, res, next) {
-	res.status(200);
-	res.render('form');
-});
-
-app.listen(port, function() {
-	console.log(`App is now listening on port ${port}!`);
-});
+	app.get('/', function(req, res, next) {
+		res.status(200);
+		res.render('form');
+	});
+};
