@@ -1,2 +1,0 @@
-web: gulp
-api: nodemon app.js
