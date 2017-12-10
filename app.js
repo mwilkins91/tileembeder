@@ -83,6 +83,7 @@ async function stealAssets(req, res, next) {
 		otherFiles.forEach((asset, i) => {
 			let fileName = otherFiles[i].split('/');
 			fileName = fileName[fileName.length - 1];
+			fileName = fileName.split('?')[0];
 			let extension = fileName.split('.');
 			extension = extension[extension.length - 1];
 			if (fileName.length > 50) {
@@ -107,6 +108,12 @@ async function stealAssets(req, res, next) {
 		requestResponses.forEach((file, i) => {
 			let fileName = textFiles[i].split('/');
 			fileName = fileName[fileName.length - 1];
+			fileName = fileName.split('?')[0];
+			let extension = fileName.split('.');
+			extension = extension[extension.length - 1];
+			if (fileName.length > 50) {
+				fileName = `fileNameTooLong${i}.${extension}`;
+			}
 			writePromises.push(
 				writeFile(path.resolve(__dirname, 'assets', fileName), file.body)
 			);
