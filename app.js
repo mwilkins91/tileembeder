@@ -56,6 +56,9 @@ const emptyFolder = function(directory) {
 
 async function zipAndSend(req, res, next) {
 	try {
+		if (!fs.existsSync(path.resolve(__dirname, 'zips'))) {
+			fs.mkdirSync(path.resolve(__dirname, 'zips'));
+		}
 		let zip = await zipFolder(
 			path.resolve(__dirname, 'assets'),
 			path.resolve(__dirname, 'zips', 'assets.zip')
@@ -84,6 +87,9 @@ async function stealAssets(req, res, next) {
 			extension = extension[extension.length - 1];
 			if (fileName.length > 50) {
 				fileName = `fileNameTooLong${i}.${extension}`;
+			}
+			if (!fs.existsSync(path.resolve(__dirname, 'assets'))) {
+				fs.mkdirSync(path.resolve(__dirname, 'assets'));
 			}
 			let fileStream = request(asset).pipe(
 				fs.createWriteStream(path.resolve(__dirname, 'assets', fileName))
