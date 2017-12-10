@@ -7,7 +7,19 @@ const fs = require('fs');
 let imageNum = 1;
 const port = process.env.PORT || 8080;
 const mustacheExpress = require('mustache-express');
+const promisify = require('es6-promisify');
+const promRequest = promisify(require('request'));
+const request = require('request');
+const zipFolder = promisify(require('zip-folder'));
+const writeFile = promisify(fs.writeFile);
 
+const stream = function writeToFile(filePath) {
+	return new Promise((resolve, reject) => {
+		const file = fs.createWriteStream(filePath);
+		file.on('finish', resolve); // not sure why you want to pass a boolean
+		file.on('error', reject); // don't forget this!
+	});
+};
 fs.readdir('imgs', (err, files) => {
 	if (err) {
 		console.error(err);
@@ -28,6 +40,100 @@ function makeEmbed({ url, src, height, width }) {
     </a>
     `;
 	return embedTemplate.replace(/\s+/g, ' ');
+}
+
+const emptyFolder = function(directory) {
+	fs.readdir(directory, (err, files) => {
+		if (err) throw err;
+
+		for (const file of files) {
+			fs.unlink(path.join(directory, file), err => {
+				if (err) throw err;
+			});
+		}
+	});
+};
+
+async function zipAndSend(req, res, next) {
+	try {
+		let zip = await zipFolder(
+			path.resolve(__dirname, 'assets'),
+			path.resolve(__dirname, 'zips', 'assets.zip')
+		);
+		emptyFolder(path.resolve(__dirname, 'assets'));
+		next();
+	} catch (err) {
+		console.log(err);
+		res.send(500).send('another fail!');
+	}
+}
+
+async function stealAssets(req, res, next) {
+	try {
+		let styles = req.assets.stylesheet;
+		let images = req.assets.image;
+		let fonts = req.assets.font;
+		let scripts = req.assets.script;
+
+		let textFiles = [...styles, ...scripts];
+		let otherFiles = [...images, ...fonts];
+		let streamPromises = [];
+		otherFiles.forEach((asset, i) => {
+			let fileName = otherFiles[i].split('/');
+			fileName = fileName[fileName.length - 1];
+			let extension = fileName.split('.');
+			extension = extension[extension.length - 1];
+			if (fileName.length > 50) {
+				fileName = `fileNameTooLong${i}.${extension}`;
+			}
+			let fileStream = request(asset).pipe(
+				fs.createWriteStream(path.resolve(__dirname, 'assets', fileName))
+			);
+			streamPromises.push(
+				new Promise((resolve, reject) => {
+					fileStream.on('finish', _ => resolve(true));
+					fileStream.on('error', _ => reject(false));
+				})
+			);
+		});
+		let requestPromises = textFiles.map(asset => promRequest(asset));
+		let requestResponses = await Promise.all(requestPromises);
+		let writePromises = [];
+		requestResponses.forEach((file, i) => {
+			let fileName = textFiles[i].split('/');
+			fileName = fileName[fileName.length - 1];
+			writePromises.push(
+				writeFile(path.resolve(__dirname, 'assets', fileName), file.body)
+			);
+		});
+
+		let allProms = [...writePromises, ...streamPromises];
+		let allResults = await Promise.all(allProms);
+		next();
+	} catch (err) {
+		res.status(500).send('fail');
+	}
+}
+
+async function getAssetsManifest(req, res, next) {
+	const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+	const page = await browser.newPage();
+	let queryUrl = req.query.url;
+	const assets = {};
+	page.on('request', request => {
+		if (!assets[request.resourceType]) {
+			assets[request.resourceType] = [];
+		}
+
+		assets[request.resourceType].push(request.url);
+	});
+
+	await page.goto(`${queryUrl}`, { waitUntil: 'networkidle2' });
+
+	await browser.close();
+
+	req.assets = assets;
+	next();
 }
 
 async function screenshotDOMElement(page, selector, padding = 0) {
@@ -112,9 +218,30 @@ app.get('/getEmbed', initScreenshot, function(req, res, next) {
 	});
 });
 
+app.get('/assets', getAssetsManifest, stealAssets, zipAndSend, function(
+	req,
+	res,
+	next
+) {
+	res.status(200);
+	res.sendFile(path.resolve(__dirname, 'zips', 'assets.zip'));
+	emptyFolder(path.resolve(__dirname, 'zips'));
+});
+
 app.get('/', function(req, res, next) {
 	res.status(200);
-	res.render('form');
+	res.render('form', {
+		formTitle: 'Uberflip Item Url:',
+		formTarget: '/getEmbed'
+	});
+});
+
+app.get('/getAssets', function(req, res, next) {
+	res.status(200);
+	res.render('form', {
+		formTitle: 'Steal the assets from:',
+		formTarget: '/assets'
+	});
 });
 
 app.listen(port, function() {
