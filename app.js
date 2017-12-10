@@ -91,7 +91,7 @@ async function stealAssets(req, res, next) {
 			streamPromises.push(
 				new Promise((resolve, reject) => {
 					fileStream.on('finish', _ => resolve(true));
-					fileStream.on('error', _ => reject(false));
+					fileStream.on('error', err => reject(err));
 				})
 			);
 		});
