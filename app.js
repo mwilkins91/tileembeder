@@ -70,11 +70,10 @@ async function zipAndSend(req, res, next) {
 
 async function stealAssets(req, res, next) {
 	try {
-		let styles = req.assets.stylesheet;
-		let images = req.assets.image;
-		let fonts = req.assets.font;
-		let scripts = req.assets.script;
-
+		let styles = req.assets.stylesheet || [];
+		let images = req.assets.image || [];
+		let fonts = req.assets.font || [];
+		let scripts = req.assets.script || [];
 		let textFiles = [...styles, ...scripts];
 		let otherFiles = [...images, ...fonts];
 		let streamPromises = [];
