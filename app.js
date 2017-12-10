@@ -111,6 +111,7 @@ async function stealAssets(req, res, next) {
 		let allResults = await Promise.all(allProms);
 		next();
 	} catch (err) {
+		console.log(err);
 		res.status(500).send('fail');
 	}
 }
